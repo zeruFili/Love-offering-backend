@@ -5,7 +5,8 @@ const catchAsync = require('../utils/catchAsync'); // Adjust the path as necessa
 const chapa = require('../lib/chapa.js');
 
 const createCheckoutSession = catchAsync(async (req, res) => {
-    const { amount } = req.body; // Now expecting an amount
+    const { videoId, amount, description} = req.body; // Now expecting an amount
+    console.log("Request Body:", req.body);
     const userId = req.user._id;
 
     // Fetch the user from the database

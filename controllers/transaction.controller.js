@@ -1,101 +1,189 @@
-const Transaction = require('../models/transaction.model'); // Adjust the path as necessary
-const User = require('../models/user.model'); // Adjust the path as necessary
-const request = require('request');
+const TransactionService = require("../services/transaction.service");
+const catchAsync = require("../utils/catchAsync");
 
-const createTransaction = async (req, res) => {
-    try {
-        const { amount, receiver, description } = req.body;
-        const sender = req.user._id; // Get sender ID from authenticated user
+// Create a transaction (tip)
+exports.createTransaction = catchAsync(async (req, res) => {
+  const { videoId, amount, description } = req.body;
+  console.log("Create Transaction Request Body:", req.body);
+  const supporterId = req.user._id;
 
-        if (!amount || !receiver) {
-            return res.status(400).json({ message: "Please provide all required fields: amount, receiver" });
-        }
+  if (!videoId) {
+    return res.status(400).json({ error: "Video ID is required" });
+  }
 
-        // Create transaction
-        const transaction = await Transaction.create({
-            sender,
-            amount,
-            receiver,
-            description,
-        });
+  const transaction = await TransactionService.createTransaction(
+    videoId, 
+    amount, 
+    description, 
+    supporterId
+  );
+  
+  res.status(200).json({
+    msg: "Transaction created successfully. Perform payment.",
+    paymentUrl: transaction.paymentUrl,
+  });
+});
 
-        return res.status(201).json(transaction);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to create transaction", error: error.message });
-    }
-};
+// Get all transactions
+exports.getAllTransactions = catchAsync(async (req, res) => {
+  const transactions = await TransactionService.getAllTransactions();
+  res.status(200).json(transactions);
+});
 
-const getMyTransactions = async (req, res) => {
-    try { 
-        const sender = req.user._id; 
-        const transactions = await Transaction.find({sender})
-            .populate('sender', 'first_name last_name')
-            .populate('receiver', 'first_name last_name')
-            .sort({ createdAt: -1 });
+// Get a transaction by ID
+exports.getTransactionById = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const transaction = await TransactionService.getTransactionById(id);
 
-        if (transactions.length === 0) {
-            return res.status(404).json({ message: "No transactions found" });
-        }
+  if (!transaction) {
+    return res.status(404).json({ message: 'Transaction not found.' });
+  }
+  res.status(200).json(transaction);
+});
 
-        const response = transactions.map(transaction => ({
-            _id: transaction._id,
-            amount: transaction.amount,
-            status: transaction.status,
-            sender: {
-                first_name: transaction.sender.first_name,
-                last_name: transaction.sender.last_name,
-            },
-            receiver: {
-                first_name: transaction.receiver.first_name,
-                last_name: transaction.receiver.last_name,
-            },
-            description: transaction.description,
-            createdAt: transaction.createdAt,
+// Get transactions by artist (video owner)
+exports.getTransactionsByArtist = catchAsync(async (req, res) => {
+  const artistId = req.user._id;
+  const transactions = await TransactionService.getTransactionsByArtist(artistId);
 
-        }));
+  if (!transactions.length) {
+    return res.status(404).json({ message: 'No transactions found for your videos.' });
+  }
 
-        return res.json(response);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to retrieve transactions", error: error.message });
-    }
-};
+  const transactionDetails = transactions.map(transaction => ({
+    video: {
+      videoName: transaction.video.videoName,
+      youtubeURL: transaction.video.youtubeURL,
+      message: transaction.video.message,
+    },
+    supporter: {
+      name: `${transaction.supporter.first_name} ${transaction.supporter.last_name}`,
+      email: transaction.supporter.email,
+    },
+    transaction: {
+      _id: transaction._id,
+      amount: transaction.amount,
+      description: transaction.description,
+      artistViewed: transaction.artistViewed,
+      supporterViewed: transaction.supporterViewed,
+      createdAt: transaction.createdAt,
+      payment: transaction.payment,
+    },
+  }));
 
+  res.status(200).json(transactionDetails);
+});
 
-const getAllTransactions = async (req, res) => {
-    try {
-        const transactions = await Transaction.find()
-            .populate('sender', 'first_name last_name')
-            .populate('receiver', 'first_name last_name')
-            .sort({ createdAt: -1 });
+// Get transactions by supporter (tipper)
+exports.getTransactionsBySupporter = catchAsync(async (req, res) => {
+  const supporterId = req.user._id;
+  const transactions = await TransactionService.getTransactionsBySupporter(supporterId);
 
-        if (transactions.length === 0) {
-            return res.status(404).json({ message: "No transactions found" });
-        }
+  if (!transactions.length) {
+    return res.status(404).json({ message: 'No transactions found for your account.' });
+  }
 
-        const response = transactions.map(transaction => ({
-            _id: transaction._id,
-            amount: transaction.amount,
-            status: transaction.status,
-            sender: {
-                first_name: transaction.sender.first_name,
-                last_name: transaction.sender.last_name,
-            },
-            receiver: {
-                first_name: transaction.receiver.first_name,
-                last_name: transaction.receiver.last_name,
-            },
-            description: transaction.description,
-            createdAt: transaction.createdAt,
+  const transactionDetails = transactions.map(transaction => ({
+    video: {
+      videoName: transaction.video.videoName,
+      youtubeURL: transaction.video.youtubeURL,
+      message: transaction.video.message,
+    },
+    artist: {
+      name: `${transaction.artist.first_name} ${transaction.artist.last_name}`,
+      email: transaction.artist.email,
+    },
+    transaction: {
+      _id: transaction._id,
+      amount: transaction.amount,
+      description: transaction.description,
+      artistViewed: transaction.artistViewed,
+      supporterViewed: transaction.supporterViewed,
+      createdAt: transaction.createdAt,
+      payment: transaction.payment,
+    },
+  }));
 
-        }));
+  res.status(200).json(transactionDetails);
+});
 
-        return res.json(response);
-    } catch (error) {
-        return res.status(500).json({ message: "Failed to retrieve transactions", error: error.message });
-    }
-};
+// Get transactions for a specific video
+exports.getTransactionsForVideo = catchAsync(async (req, res) => {
+  const { videoId } = req.params;
+  const transactions = await TransactionService.getTransactionsForVideo(videoId);
 
-module.exports = {
-    createTransaction,
-    getAllTransactions,
-};
+  res.status(200).json({
+    message: transactions.length ? "Transactions found." : "No transactions for this video.",
+    transactions: transactions,
+  });
+});
+
+// Get total tips received by artist
+exports.getArtistTotalTips = catchAsync(async (req, res) => {
+  const artistId = req.user._id;
+  const totalTips = await TransactionService.getArtistTotalTips(artistId);
+
+  res.status(200).json({
+    artistId,
+    totalTips,
+    currency: 'ETB'
+  });
+});
+
+// Update artist viewed status
+exports.updateArtistViewedStatus = catchAsync(async (req, res) => {
+  const { transactionId } = req.body;
+  const userId = req.user._id;
+
+  if (!transactionId) {
+    return res.status(400).json({ error: "Transaction ID is required" });
+  }
+
+  const transaction = await TransactionService.updateArtistViewedStatus(transactionId, userId);
+
+  res.status(200).json({
+    message: 'Artist viewed status updated successfully.',
+    transaction,
+  });
+});
+
+// Update supporter viewed status
+exports.updateSupporterViewedStatus = catchAsync(async (req, res) => {
+  const { transactionId } = req.body;
+  const userId = req.user._id;
+
+  if (!transactionId) {
+    return res.status(400).json({ error: "Transaction ID is required" });
+  }
+
+  const transaction = await TransactionService.updateSupporterViewedStatus(transactionId, userId);
+
+  res.status(200).json({
+    message: 'Supporter viewed status updated successfully.',
+    transaction,
+  });
+});
+
+// Mark all artist transactions as viewed
+exports.markAllArtistTransactionsAsViewed = catchAsync(async (req, res) => {
+  const artistId = req.user._id;
+  
+  const result = await TransactionService.markAllArtistTransactionsAsViewed(artistId);
+
+  res.status(200).json({
+    message: `Marked ${result.modifiedCount} transactions as viewed.`,
+  });
+});
+
+// Verify payment
+exports.verifyPayment = catchAsync(async (req, res) => {
+  const { tx_ref } = req.params;
+  console.log("Verifying payment for tx_ref:", tx_ref);
+
+  const result = await TransactionService.verifyPayment(tx_ref);
+
+  return res.status(200).json({ 
+    message: 'Payment verified and transaction completed', 
+    transaction: result 
+  });
+});

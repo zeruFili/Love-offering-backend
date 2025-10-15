@@ -4,6 +4,7 @@ const app = express();
 const authRouter = require('./routes/auth.route');
 const videoRouter = require('./routes/video.route');
 const paymentRouter = require('./routes/payment.route');
+const transactionRouter = require('./routes/transaction.route');
 const { errorHandler, errorConverter } = require('./middleware/error'); // Adjust the path as necessary
 const ApiError = require('./utils/ApiError'); // Adjust the path as necessary
 const httpStatus = require('http-status');
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 app.use('/api/user', authRouter);
 app.use('/api/videos', videoRouter);
 app.use('/api/payment', paymentRouter);
+app.use('/api/transaction' , transactionRouter);
 
 // Handle unknown routes
 app.use((req, res, next) => {

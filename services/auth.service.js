@@ -68,6 +68,7 @@ const loginUser = async (email, password) => {
     throw new Error("Invalid credentials");
   }
 
+  console.log("Hashed User Password:", user.password);
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new Error("Invalid credentials");
