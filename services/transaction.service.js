@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const request = require("request");
 const Transaction = require("../models/transaction.model.js");
 const Video = require("../models/video.model.js");
@@ -109,10 +110,17 @@ exports.getTransactionsBySupporter = async (supporterId) => {
 };
 
 exports.getTransactionsForVideo = async (videoId) => {
-  return await Transaction.find({ video: videoId })
+  const transactions = await Transaction.find({ video: videoId })
     .populate('supporter', 'first_name last_name email')
-    .select('amount description createdAt payment')
+    .select('amount description createdAt payment  artistViewed') // Add the viewed fields here
     .sort({ createdAt: -1 });
+
+  const totalSum = transactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+  return {
+    transactions,
+    totalSum
+  };
 };
 
 exports.getArtistTotalTips = async (artistId) => {
@@ -172,6 +180,19 @@ exports.markAllArtistTransactionsAsViewed = async (artistId) => {
     },
     { 
       artistViewed: true 
+    }
+  );
+};
+
+// Mark all supporter transactions as viewed
+exports.markAllSupporterTransactionsAsViewed = async (supporterId) => {
+  return await Transaction.updateMany(
+    { 
+      supporter: supporterId,
+      supporterViewed: false 
+    },
+    { 
+      supporterViewed: true 
     }
   );
 };
@@ -242,4 +263,58 @@ exports.verifyPayment = async (tx_ref) => {
       }
     });
   });
+};
+
+// Get unviewed transactions with count for artist
+exports.getArtistUnviewedData = async (artistId) => {
+  const transactions = await Transaction.find({ 
+    artist: artistId,
+    artistViewed: false 
+  })
+    .populate('video', 'videoName youtubeURL message')
+    .populate('supporter', 'first_name last_name email')
+    .select('amount description createdAt payment')
+    .sort({ createdAt: -1 });
+
+  const count = transactions.length;
+
+  return { 
+    count,
+    transactions: transactions.map(transaction => ({
+      _id: transaction._id,
+      amount: transaction.amount,
+      description: transaction.description,
+      createdAt: transaction.createdAt,
+      payment: transaction.payment,
+      video: transaction.video,
+      supporter: transaction.supporter
+    }))
+  };
+};
+
+// Get unviewed transactions with count for supporter
+exports.getSupporterUnviewedData = async (supporterId) => {
+  const transactions = await Transaction.find({ 
+    supporter: supporterId,
+    supporterViewed: false 
+  })
+    .populate('video', 'videoName youtubeURL message')
+    .populate('artist', 'first_name last_name email')
+    .select('amount description createdAt payment')
+    .sort({ createdAt: -1 });
+
+  const count = transactions.length;
+
+  return {
+    count,
+    transactions: transactions.map(transaction => ({
+      _id: transaction._id,
+      amount: transaction.amount,
+      description: transaction.description,
+      createdAt: transaction.createdAt,
+      payment: transaction.payment,
+      video: transaction.video,
+      artist: transaction.artist
+    }))
+  };
 };

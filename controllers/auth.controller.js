@@ -50,6 +50,7 @@ const login = catchAsync(async (req, res) => {
   // Attempt to log in the user and get user info and tokens
   const { user, accessToken, refreshToken } = await authService.loginUser(email, password);
 
+  console.log("Login successful for  accesss token user:", accessToken);
   // Set cookies with tokens
   setCookies(res, accessToken, refreshToken);
 

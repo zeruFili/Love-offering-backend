@@ -30,6 +30,8 @@ exports.getAllTransactions = catchAsync(async (req, res) => {
   res.status(200).json(transactions);
 });
 
+
+
 // Get a transaction by ID
 exports.getTransactionById = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -110,13 +112,15 @@ exports.getTransactionsBySupporter = catchAsync(async (req, res) => {
 // Get transactions for a specific video
 exports.getTransactionsForVideo = catchAsync(async (req, res) => {
   const { videoId } = req.params;
-  const transactions = await TransactionService.getTransactionsForVideo(videoId);
+  const { transactions, totalSum } = await TransactionService.getTransactionsForVideo(videoId);
 
   res.status(200).json({
     message: transactions.length ? "Transactions found." : "No transactions for this video.",
-    transactions: transactions,
+    transactions,
+    totalSum
   });
 });
+
 
 // Get total tips received by artist
 exports.getArtistTotalTips = catchAsync(async (req, res) => {
@@ -175,6 +179,17 @@ exports.markAllArtistTransactionsAsViewed = catchAsync(async (req, res) => {
   });
 });
 
+// Mark all supporter transactions as viewed
+exports.markAllSupporterTransactionsAsViewed = catchAsync(async (req, res) => {
+  const supporterId = req.user._id;
+  
+  const result = await TransactionService.markAllSupporterTransactionsAsViewed(supporterId);
+
+  res.status(200).json({
+    message: `Marked ${result.modifiedCount} transactions as viewed.`,
+  });
+});
+
 // Verify payment
 exports.verifyPayment = catchAsync(async (req, res) => {
   const { tx_ref } = req.params;
@@ -185,5 +200,33 @@ exports.verifyPayment = catchAsync(async (req, res) => {
   return res.status(200).json({ 
     message: 'Payment verified and transaction completed', 
     transaction: result 
+  });
+});
+
+
+
+// Get unviewed transactions with count for artist
+exports.getArtistUnviewedData = catchAsync(async (req, res) => {
+  const artistId = req.user._id;
+  const { count, transactions } = await TransactionService.getArtistUnviewedData(artistId);
+
+  res.status(200).json({
+    success: true,
+    count,
+    transactions,
+    message: count > 0 ? `Found ${count} unviewed transactions` : 'No unviewed transactions'
+  });
+});
+
+// Get unviewed transactions with count for supporter
+exports.getSupporterUnviewedData = catchAsync(async (req, res) => {
+  const supporterId = req.user._id;
+  const { count, transactions } = await TransactionService.getSupporterUnviewedData(supporterId);
+
+  res.status(200).json({
+    success: true,
+    count,
+    transactions,
+    message: count > 0 ? `Found ${count} unviewed transactions` : 'No unviewed transactions'
   });
 });

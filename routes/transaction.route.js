@@ -10,6 +10,9 @@ const {
   updateArtistViewedStatus,
   updateSupporterViewedStatus,
   markAllArtistTransactionsAsViewed,
+  markAllSupporterTransactionsAsViewed,
+  getArtistUnviewedData ,
+  getSupporterUnviewedData,
   verifyPayment
 } = require('../controllers/transaction.controller');
 const { protect, adminValidator } = require('../middleware/authMiddleware');
@@ -25,12 +28,17 @@ router.get('/', protect, adminValidator, getAllTransactions);
 router.get('/:id', protect, getTransactionById);
 router.get('/artist/my-transactions', protect, getTransactionsByArtist);
 router.get('/supporter/my-transactions', protect, getTransactionsBySupporter);
-router.get('/video/:videoId', protect, getTransactionsForVideo);
+router.get('/video/:videoId',  protect,getTransactionsForVideo);
 router.get('/artist/total-tips', protect, getArtistTotalTips);
+router.get('/artist/unviewed-data', protect, getArtistUnviewedData);
+router.get('/supporter/unviewed-data', protect, getSupporterUnviewedData);
 
 // View status update routes
 router.patch('/artist-viewed', protect, updateArtistViewedStatus);
 router.patch('/supporter-viewed', protect, updateSupporterViewedStatus);
+router.patch('/supporter/mark-all-viewed', protect, markAllSupporterTransactionsAsViewed);
 router.patch('/artist/mark-all-viewed', protect, markAllArtistTransactionsAsViewed);
+
+
 
 module.exports = router;
