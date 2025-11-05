@@ -140,13 +140,26 @@ const deleteUser = async (userId) => {
   await User.findByIdAndDelete(userId);
 };
 
-const updateUser = async (userId, updates) => {
+const updateUserProfile = async (userId, updates, idImages) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new Error("User not found");
   }
 
-  Object.assign(user, updates);
+  // Users can only update certain profile fields
+  const allowedFields = ['first_name', 'last_name', 'phone_number'];
+  const filteredUpdates = {};
+
+  Object.keys(updates).forEach(key => {
+    if (allowedFields.includes(key)) {
+      filteredUpdates[key] = updates[key];
+    }
+  });
+
+  // Set idImages to the new ones, replacing any existing images
+  filteredUpdates.idImages = idImages; // This is correct
+
+  Object.assign(user, filteredUpdates);
   await user.save();
   return user;
 };
@@ -162,7 +175,24 @@ const getUserById = async (userId) => {
 const getAllUsers = async () => {
   return await User.find({}, '-password');
 };
+const verifyUser = async (adminId, userId) => {
+  const user = await User.findById(userId);
+  const admin = await User.findById(adminId);
+  
+  // Check if the admin has the correct role
+  if (admin.role !== 'admin') { // Fixed the role check logic
+    throw new Error("Only admins can verify users.");
+  }
+  
+  if (!user) {
+    throw new Error("User not found");
+  }
 
+  user.isVerified = true;
+  await user.save();
+  
+  return user;
+};
 module.exports = {
   createUser,
   verifyUserEmail,
@@ -174,7 +204,8 @@ module.exports = {
   sendWelcomeEmail,
   sendResetSuccessEmail,
   deleteUser,
-  updateUser,
+  verifyUser,
+  updateUserProfile,
   getUserById,
   getAllUsers,
 };

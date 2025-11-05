@@ -150,8 +150,27 @@ const updateUserProfile = catchAsync(async (req, res) => {
   const userId = req.user._id;
   const updates = req.body;
 
-  const user = await authService.updateUser(userId, updates);
-  res.status(httpStatus.default.OK).json({ success: true, user });
+  // Prepare idImages directly from processed files or an empty array
+  const idImages = req.processedFiles && req.processedFiles.length > 0 
+    ? req.processedFiles 
+    : [];
+
+  const user = await authService.updateUserProfile(userId, updates, idImages);
+
+  res.status(httpStatus.default.OK).json({
+    success: true,
+    message: "Profile updated successfully",
+    user: {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      phone_number: user.phone_number,
+      role: user.role,
+      isVerified: user.isVerified,
+      idImages: user.idImages,
+    }
+  });
 });
 
 const getMyProfile = catchAsync(async (req, res) => {
@@ -174,6 +193,27 @@ const checkAuth = catchAsync(async (req, res) => {
   res.status(httpStatus.default.OK).json({ success: true, user });
 });
 
+const verifyUser = catchAsync(async (req, res) => {
+  const adminId = req.user._id; 
+  const userId = req.body.userId; // Extract userId correctly
+
+  const user = await authService.verifyUser(adminId, userId);
+
+  res.status(httpStatus.default.OK).json({
+    success: true,
+    message: "User verified successfully",
+    user: {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      role: user.role,
+      isVerified: user.isVerified,
+    },
+  });
+});
+
+
 module.exports = {
   signup,
   verifyEmail,
@@ -187,5 +227,6 @@ module.exports = {
   getMyProfile,
   getAllUsers,
   checkAuth, 
+  verifyUser,
   refreshAccessToken
 };

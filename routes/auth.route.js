@@ -10,6 +10,7 @@ const {
   updateUserProfile,
   getMyProfile,
   getAllUsers,
+  verifyUser
 } = require("../controllers/auth.controller"); // Import all required controller functions
 const { uploadFileMiddleware } = require("../middleware/uploadMiddleware");
 
@@ -49,5 +50,6 @@ router.post("/logout", logout);
 router.post("/verify-email", validate(verifyEmailSchema) , verifyEmail);
 router.post("/forgot-password",validate(forgotPasswordSchema) , forgotPassword);
 router.post("/reset-password/:token", validate(resetPasswordSchema) , resetPassword);
+router.post('/verify', protect, verifyUser);
 
 module.exports = router;
