@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
+		phone_number: {
+			type: String,
+			required: true, 
+			unique: true,   
+		},
 		lastLogin: {
 			type: Date,
 			default: Date.now,
@@ -35,6 +40,12 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			enum: ['user', 'admin'],
 			default: 'user', // Default role is 'user'
+		},
+		idImages: [{
+			type: String, // Array of URLs for ID images
+		}],
+		refreshToken: { // Add this line
+			type: String,
 		},
 	},
 	{ timestamps: true }

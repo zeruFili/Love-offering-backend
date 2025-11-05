@@ -11,6 +11,7 @@ const {
   getMyProfile,
   getAllUsers,
 } = require("../controllers/auth.controller"); // Import all required controller functions
+const { uploadFileMiddleware } = require("../middleware/uploadMiddleware");
 
 const {
   signupSchema,
@@ -27,7 +28,7 @@ const validate = require("../middleware/validate");
 const router = express.Router();
 
 // User registration
-router.post("/signup", validate(signupSchema), signup);
+router.post("/signup", uploadFileMiddleware, validate(signupSchema), signup);
 
 // User login
 router.post("/login", validate(loginSchema), login);

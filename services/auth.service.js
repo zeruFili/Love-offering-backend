@@ -9,7 +9,7 @@ const {
 const generateTokens = require("../utils/generateTokens.js"); // Token generation logic
 const jwt = require("jsonwebtoken");
 
-const createUser = async (email, password, first_name, last_name, phone_number) => {
+const createUser = async (email, password, first_name, last_name, phone_number, idImages = []) => {
   const userAlreadyExists = await User.findOne({ email });
   if (userAlreadyExists) {
     throw new Error("User already exists");
@@ -26,6 +26,7 @@ const createUser = async (email, password, first_name, last_name, phone_number) 
     phone_number,
     verificationToken,
     verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours expiry
+    idImages: idImages // Store the array of processed file names
   });
 
   await user.save();
@@ -45,18 +46,19 @@ const verifyUserEmail = async (code) => {
   const user = await User.findOne({
     verificationToken: code,
     verificationTokenExpiresAt: { $gt: Date.now() },
-  }); 
-   const { accessToken, refreshToken } = generateTokens(user._id);
-  user.refreshToken = refreshToken;
-  await user.save();
+  });
 
   if (!user) {
     throw new Error("Invalid or expired verification code");
   }
 
+  const { accessToken, refreshToken } = generateTokens(user._id);
+  
   user.isVerified = true;
   user.verificationToken = undefined;
   user.verificationTokenExpiresAt = undefined;
+  user.refreshToken = refreshToken;
+  
   await user.save();
 
   return { user, accessToken, refreshToken };
@@ -68,7 +70,6 @@ const loginUser = async (email, password) => {
     throw new Error("Invalid credentials");
   }
 
-  console.log("Hashed User Password:", user.password);
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw new Error("Invalid credentials");
@@ -76,7 +77,13 @@ const loginUser = async (email, password) => {
 
   const { accessToken, refreshToken } = generateTokens(user._id);
   user.refreshToken = refreshToken;
-  await user.save();
+  
+  try {
+    await user.save();
+  } catch (error) {
+    console.error("Error saving user with refresh token:", error);
+    throw new Error("Could not save user with refresh token");
+  }
 
   return { user, accessToken, refreshToken };
 };
@@ -119,6 +126,7 @@ const sendResetEmail = async (email, resetToken) => {
 
   user.resetPasswordToken = resetToken;
   user.resetPasswordExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour expiry
+  console.log("this is the reset token " , resetToken);
   await user.save();
 
   await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`);
@@ -129,7 +137,7 @@ const deleteUser = async (userId) => {
   if (!user) {
     throw new Error("User not found");
   }
-  await user.remove();
+  await User.findByIdAndDelete(userId);
 };
 
 const updateUser = async (userId, updates) => {
