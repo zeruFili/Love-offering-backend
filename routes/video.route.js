@@ -14,6 +14,8 @@ router.get('/my', protect, videoController.getUserVideos);
 // Route to get a specific video by ID with user details
 router.get('/:id', videoController.getVideoById);
 
+router.get('/search/url', videoController.searchVideosByURL);
+
 // Route to get available videos
 router.get('/', videoController.getAvailableVideos);
 

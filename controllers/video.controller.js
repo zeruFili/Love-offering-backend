@@ -190,7 +190,92 @@ exports.updateVideoWithRoleCheck = async (req, res) => {
     }
 };
 
+exports.searchVideosByURL = async (req, res) => {
+    try {
+        const { youtubeURL } = req.query;
 
+        if (!youtubeURL) {
+            return res.status(400).json({ message: 'YouTube URL query parameter is required' });
+        }
+
+        // Clean and normalize the search URL
+        const cleanSearchURL = youtubeURL.trim().toLowerCase();
+        
+        // Extract video ID if it's a full YouTube URL
+        let videoId = null;
+        const regexPatterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/,
+            /(?:v=)([^&]+)/,
+            /^[a-zA-Z0-9_-]{11}$/ // Direct video ID
+        ];
+
+        for (const pattern of regexPatterns) {
+            const match = cleanSearchURL.match(pattern);
+            if (match && match[1]) {
+                videoId = match[1];
+                break;
+            } else if (pattern.test(cleanSearchURL) && cleanSearchURL.length === 11) {
+                videoId = cleanSearchURL; // It's already a video ID
+                break;
+            }
+        }
+
+        // Build search query
+        let searchQuery = {};
+        
+        if (videoId) {
+            // Search by video ID in URL (handles different YouTube URL formats)
+            searchQuery = {
+                $or: [
+                    { youtubeURL: { $regex: videoId, $options: 'i' } },
+                    { youtubeURL: { $regex: `youtube.com/watch?v=${videoId}`, $options: 'i' } },
+                    { youtubeURL: { $regex: `youtu.be/${videoId}`, $options: 'i' } }
+                ]
+            };
+        } else {
+            // Fallback to partial matching for other URL parts
+            searchQuery = {
+                youtubeURL: { 
+                    $regex: cleanSearchURL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 
+                    $options: 'i' 
+                }
+            };
+        }
+
+        const videos = await Video.find(searchQuery);
+
+        if (videos.length === 0) {
+            return res.status(404).json({ message: 'No videos found with the specified YouTube URL' });
+        }
+
+        // Create an array of user IDs from the found videos
+        const userIds = videos.map(video => video.userId);
+
+        // Find users by the collected user IDs
+        const users = await User.find({ _id: { $in: userIds } });
+
+        // Create a mapping of user IDs to names
+        const userMap = {};
+        users.forEach(user => {
+            userMap[user._id] = `${user.first_name} ${user.last_name}`;
+        });
+
+        // Map the response to include desired fields
+        const response = videos.map(video => ({
+            _id: video._id,
+            name: userMap[video.userId] || 'Unknown User',
+            youtubeURL: video.youtubeURL,
+            videoName: video.videoName,
+            createdAt: video.createdAt,
+            message: video.message,
+            status: video.status,
+        }));
+
+        return res.status(200).json(response);
+    } catch (error) {
+        return res.status(500).json({ message: 'Error searching videos', error: error.message });
+    }
+};
 
 // Delete a video entry
 exports.deleteVideo = async (req, res) => {
