@@ -9,12 +9,12 @@ router.post('/', protect, videoController.createVideo);
 
 // Route to get all videos with user details
 router.get('/all', videoController.getAllVideos);
-router.get('/my',protect, videoController.getUserVideos);
+router.get('/my', protect, videoController.getUserVideos);
 
 // Route to get a specific video by ID with user details
 router.get('/:id', videoController.getVideoById);
 
-// Route to get a specific video by ID only if it is available
+// Route to get available videos
 router.get('/', videoController.getAvailableVideos);
 
 // Route to update a video by ID (with role check)

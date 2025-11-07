@@ -38,7 +38,7 @@ router.post("/login", validate(loginSchema), login);
 router.get("/profile", protect, getMyProfile);
 
 // Update user profile
-router.put("/profile", protect, validate(updateUserProfileSchema), updateUserProfile);
+router.put("/profile", protect, updateUserProfile);
 
 // Delete user (admin only)
 router.delete("/:id", protect, adminValidator, validate(deleteUserSchema), deleteUser);

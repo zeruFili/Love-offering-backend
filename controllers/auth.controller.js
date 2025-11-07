@@ -10,23 +10,20 @@ const generateTokens = require("../utils/generateTokens.js"); // Token generatio
 const refreshAccessToken = catchAsync(async (req, res) => {
     const { refreshToken } = req.body;
 
-    // Check if refresh token exists
     if (!refreshToken) {
         return res.status(401).json({ message: "No refresh token provided" });
     }
 
-    // Verify refresh token 
     const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
     const user = await User.findById(decoded.userId);
 
-    // Check if user exists and refresh token matches
-    if (!user || user.refreshToken !== refreshToken) {
+    // Check if user exists and refreshToken is in the array
+    if (!user || !user.refreshTokens.includes(refreshToken)) {
         return res.status(403).json({ message: "Invalid refresh token" });
     }
 
     // Generate a new access token
     const { accessToken } = generateTokens(user._id);
-    console.log("access token " , accessToken)
     
     // Send the new access token in response
     res.json({ accessToken });
@@ -82,11 +79,14 @@ const verifyEmail = catchAsync(async (req, res) => {
 });
 
 const login = catchAsync(async (req, res) => {
+   console.log("Incoming request body:", req.body); 
   const { email, password } = req.body;
 
   // Attempt to log in the user and get user info and tokens
   const { user, accessToken, refreshToken } = await authService.loginUser(email, password);
   const userrefresh = user.refreshToken ; 
+
+  console.log("acess token " , accessToken,refreshToken);
 
   // Set cookies with tokens
   setCookies(res, accessToken, refreshToken);
@@ -108,12 +108,14 @@ const login = catchAsync(async (req, res) => {
 });
 
 const logout = catchAsync(async (req, res) => {
-  await authService.logoutUser(req.cookies.refreshToken);
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
-  res.status(httpStatus.default.OK).json({ success: true, message: "Logged out successfully" });
-});
+    // Get the refresh token from the request body (assuming it's sent with the logout request)
+    const {refreshToken} = req.body;
 
+    // Call the service to handle logout
+    await authService.logoutUser(refreshToken);
+    
+    res.status(httpStatus.default.OK).json({ success: true, message: "Logged out successfully" });
+});
 const forgotPassword = catchAsync(async (req, res) => {
   const { email } = req.body;
   const resetToken = crypto.randomBytes(3).toString("hex").slice(0, 6);
@@ -148,12 +150,21 @@ const deleteUser = catchAsync(async (req, res) => {
 
 const updateUserProfile = catchAsync(async (req, res) => {
   const userId = req.user._id;
-  const updates = req.body;
+  console.log("Incoming request body:", req.body); 
+  // Extract specific fields from req.body
+  const { first_name, last_name, phone_number } = req.body;
+ 
 
   // Prepare idImages directly from processed files or an empty array
   const idImages = req.processedFiles && req.processedFiles.length > 0 
     ? req.processedFiles 
     : [];
+
+  // Create an object with only the fields that need to be updated
+  const updates = {};
+  if (first_name) updates.first_name = first_name;
+  if (last_name) updates.last_name = last_name;
+  if (phone_number) updates.phone_number = phone_number;
 
   const user = await authService.updateUserProfile(userId, updates, idImages);
 

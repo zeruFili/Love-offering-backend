@@ -37,7 +37,7 @@ const createUser = async (email, password, first_name, last_name, phone_number, 
 
   console.log(user.verificationToken)
 
-  await sendVerificationEmail(user.email, user.verificationToken);
+  await sendVerificationEmail(user.email, user.verificationToken); 
 
   return { user, accessToken, refreshToken };
 };
@@ -76,6 +76,7 @@ const loginUser = async (email, password) => {
   }
 
   const { accessToken, refreshToken } = generateTokens(user._id);
+  console.log("User logged in: user data  ", user );
   user.refreshToken = refreshToken;
   
   try {
@@ -89,14 +90,16 @@ const loginUser = async (email, password) => {
 };
 
 const logoutUser = async (refreshToken) => {
-  if (refreshToken) {
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const user = await User.findById(decoded.userId);
-    if (user) {
-      user.refreshToken = null; // Clear refresh token
-      await user.save();
+    if (refreshToken) {
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const user = await User.findById(decoded.userId);
+        
+        if (user) {
+            // Remove the refresh token from the array
+            user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+            await user.save();
+        }
     }
-  }
 };
 
 const resetUserPassword = async (token, password) => {

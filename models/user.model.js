@@ -44,9 +44,7 @@ const userSchema = new mongoose.Schema(
 		idImages: [{
 			type: String, // Array of URLs for ID images
 		}],
-		refreshToken: { // Add this line
-			type: String,
-		},
+		refreshTokens: [{ type: String }],
 	},
 	{ timestamps: true }
 );
