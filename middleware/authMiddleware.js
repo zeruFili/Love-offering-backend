@@ -49,13 +49,19 @@ const protect = async (req, res, next) => {
     }
 };
 
-const adminValidator = (req, res, next) => {
-	console.log("User role:", req.user.role);
-	if (req.user && req.user.role === "admin") {
-		next();
-	} else {
-		return res.status(403).json({ message: "Access denied - Admin only" });
-	}
+const adminValidator = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user._id).select("role"); // Fetch user role from the database
+
+        if (!user || user.role !== "admin") {
+            return res.status(403).json({ message: "Access denied - Admin only" });
+        }
+
+        next();
+    } catch (error) {
+        console.log("Error in adminValidator middleware", error.message);
+        return res.status(500).json({ message: "Internal server error" });
+    }
 };
 const tokenVerificationMiddleware = (req, res, next) => {
     const { refreshToken } = req.body;
