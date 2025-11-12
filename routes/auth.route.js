@@ -10,7 +10,9 @@ const {
   updateUserProfile,
   getMyProfile,
   getAllUsers,
-  verifyUser
+  verifyUser , 
+  refreshAccessToken,
+  
 } = require("../controllers/auth.controller"); // Import all required controller functions
 const { uploadFileMiddleware } = require("../middleware/uploadMiddleware");
 
@@ -21,7 +23,8 @@ const {
   deleteUserSchema,
   forgotPasswordSchema,
 	resetPasswordSchema,
-	verifyEmailSchema
+	verifyEmailSchema,
+  refreshTokenSchema
 } = require("../validations/auth.validation");
 const { protect, adminValidator } = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
@@ -38,7 +41,7 @@ router.post("/login", validate(loginSchema), login);
 router.get("/profile", protect, getMyProfile);
 
 // Update user profile
-router.put("/profile", protect, updateUserProfile);
+router.put("/profile", protect, uploadFileMiddleware ,validate(updateUserProfileSchema), updateUserProfile);
 
 // Delete user (admin only)
 router.delete("/:id", protect, adminValidator, validate(deleteUserSchema), deleteUser);
@@ -51,5 +54,6 @@ router.post("/verify-email", validate(verifyEmailSchema) , verifyEmail);
 router.post("/forgot-password",validate(forgotPasswordSchema) , forgotPassword);
 router.post("/reset-password/:token", validate(resetPasswordSchema) , resetPassword);
 router.post('/verify', protect, verifyUser);
+router.post("/refresh-token", validate(refreshTokenSchema), refreshAccessToken); 
 
 module.exports = router;

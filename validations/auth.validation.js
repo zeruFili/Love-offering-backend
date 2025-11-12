@@ -51,6 +51,12 @@ const deleteUserSchema = {
   }),
 };
 
+const refreshTokenSchema = {
+  body: joi.object().keys({
+    refreshToken: joi.string().required(), // Expecting refresh token in the request body
+  }),
+};
+
 module.exports = {
   signupSchema,
   loginSchema,
@@ -59,4 +65,5 @@ module.exports = {
   verifyEmailSchema,
   updateUserProfileSchema,
   deleteUserSchema,
+  refreshTokenSchema
 };
