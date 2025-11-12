@@ -5,14 +5,30 @@ const User = require('../models/user.model');
 // Create a new video entry
 exports.createVideo = async (req, res) => {
     try {
+        const userId = req.user._id; // Get ID from the authenticated user object
+
+        // 1. Find the user by ID
+        const user = await User.findById(userId);
+
+        // Safety check (shouldn't happen if 'protect' middleware works correctly)
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+        
+        // 2. Check if the user is verified
+        if (!user.isVerified) {
+            return res.status(403).json({ message: 'Forbidden: You must have a verified account to create a video.' });
+        }
+        
+        // 3. If verified, proceed to create the video
         const { youtubeURL, videoName, message } = req.body;
-        const userId = req.user._id;  // Use user ID from the request
 
         const video = new Video({ userId, youtubeURL, videoName, message });
         await video.save();
 
         return res.status(201).json({ message: 'Video created successfully', video });
     } catch (error) {
+        // Handle validation errors or other server errors
         return res.status(400).json({ message: 'Error creating video', error: error.message });
     }
 };

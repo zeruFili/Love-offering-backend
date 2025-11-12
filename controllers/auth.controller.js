@@ -30,6 +30,8 @@ const refreshAccessToken = catchAsync(async (req, res) => {
 });
 
 const signup = catchAsync(async (req, res) => {
+
+  console.log("Incoming request body:", req.body);
   const { email, password, first_name, last_name, phone_number } = req.body;
 
   // Use processed files from middleware or empty array if none

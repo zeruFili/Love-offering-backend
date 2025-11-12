@@ -1953,3 +1953,10 @@ remote-addr - PUT /api/user/profile 500 80.763 ms PostmanRuntime/7.49.1  Fri, 07
 remote-addr - PUT /api/user/profile 500 188.983 ms PostmanRuntime/7.49.1  Fri, 07 Nov 2025 19:48:59 GMT -error-message: Cannot destructure property 'first_name' of 'req.body' as it is undefined.
 remote-addr - PUT /api/user/profile 500 271.874 ms PostmanRuntime/7.49.1  Fri, 07 Nov 2025 19:51:19 GMT -error-message: Cannot destructure property 'first_name' of 'req.body' as it is undefined.
 remote-addr - POST /api/user/login 500 50.832 ms PostmanRuntime/7.49.1  Fri, 07 Nov 2025 19:53:46 GMT -error-message: Cannot destructure property 'email' of 'req.body' as it is undefined.
+remote-addr - POST /api/user/login 500 220.923 ms PostmanRuntime/7.49.1  Sat, 08 Nov 2025 20:37:09 GMT -error-message: Cannot destructure property 'email' of 'req.body' as it is undefined.
+remote-addr - POST /api/user/signup 400 119.796 ms PostmanRuntime/7.49.1  Sat, 08 Nov 2025 20:38:13 GMT -error-message: "body.email" is required
+remote-addr - POST /api/user/login 500 78.802 ms PostmanRuntime/7.49.1  Sat, 08 Nov 2025 20:39:52 GMT -error-message: Cannot destructure property 'email' of 'req.body' as it is undefined.
+remote-addr - POST /api/user/login 500 100.847 ms PostmanRuntime/7.50.0  Wed, 12 Nov 2025 09:58:18 GMT -error-message: Cannot destructure property 'email' of 'req.body' as it is undefined.
+remote-addr - POST /api/user/signup 400 283.885 ms PostmanRuntime/7.50.0  Wed, 12 Nov 2025 10:07:40 GMT -error-message: "body.email" is required
+remote-addr - POST /api/user/signup 400 52.791 ms PostmanRuntime/7.50.0  Wed, 12 Nov 2025 10:21:34 GMT -error-message: "body.email" is required
+remote-addr - POST /api/user/login 400 3.408 ms PostmanRuntime/7.50.0  Wed, 12 Nov 2025 10:21:48 GMT -error-message: "body.email" is required
