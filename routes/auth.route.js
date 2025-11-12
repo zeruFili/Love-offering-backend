@@ -26,7 +26,7 @@ const {
 	verifyEmailSchema,
   refreshTokenSchema
 } = require("../validations/auth.validation");
-const { protect, adminValidator } = require("../middleware/authMiddleware");
+const { protect, adminValidator , tokenVerificationMiddleware} = require("../middleware/authMiddleware");
 const validate = require("../middleware/validate");
 
 const router = express.Router();
@@ -54,6 +54,6 @@ router.post("/verify-email", validate(verifyEmailSchema) , verifyEmail);
 router.post("/forgot-password",validate(forgotPasswordSchema) , forgotPassword);
 router.post("/reset-password/:token", validate(resetPasswordSchema) , resetPassword);
 router.post('/verify', protect, verifyUser);
-router.post("/refresh-token", validate(refreshTokenSchema), refreshAccessToken); 
+router.post("/refresh-token", tokenVerificationMiddleware, validate(refreshTokenSchema), refreshAccessToken); 
 
 module.exports = router;

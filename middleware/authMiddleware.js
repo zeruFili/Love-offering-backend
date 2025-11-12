@@ -57,8 +57,24 @@ const adminValidator = (req, res, next) => {
 		return res.status(403).json({ message: "Access denied - Admin only" });
 	}
 };
+const tokenVerificationMiddleware = (req, res, next) => {
+    const { refreshToken } = req.body;
 
+    if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token provided." });
+    }
+
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ message: "Refresh token has expired. Please log in again." });
+        }
+        // Attach the user ID to the request object
+        req.userId = decoded.userId;
+        next();
+    });
+};
 module.exports = {
 	protect,
 	adminValidator,
+    tokenVerificationMiddleware
 };
