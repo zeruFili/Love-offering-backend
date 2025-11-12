@@ -1953,3 +1953,4 @@ remote-addr - PUT /api/user/profile 500 80.763 ms PostmanRuntime/7.49.1  Fri, 07
 remote-addr - PUT /api/user/profile 500 188.983 ms PostmanRuntime/7.49.1  Fri, 07 Nov 2025 19:48:59 GMT -error-message: Cannot destructure property 'first_name' of 'req.body' as it is undefined.
 remote-addr - PUT /api/user/profile 500 271.874 ms PostmanRuntime/7.49.1  Fri, 07 Nov 2025 19:51:19 GMT -error-message: Cannot destructure property 'first_name' of 'req.body' as it is undefined.
 remote-addr - POST /api/user/login 500 50.832 ms PostmanRuntime/7.49.1  Fri, 07 Nov 2025 19:53:46 GMT -error-message: Cannot destructure property 'email' of 'req.body' as it is undefined.
+remote-addr - POST /api/user/signup 201 452.715 ms PostmanRuntime/7.50.0 Wed, 12 Nov 2025 11:01:57 GMT

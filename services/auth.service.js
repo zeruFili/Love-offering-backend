@@ -37,7 +37,7 @@ const createUser = async (email, password, first_name, last_name, phone_number, 
 
   console.log(user.verificationToken)
 
-  await sendVerificationEmail(user.email, user.verificationToken); 
+  // await sendVerificationEmail(user.email, user.verificationToken); 
 
   return { user, accessToken, refreshToken };
 };
