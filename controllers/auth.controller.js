@@ -4,31 +4,29 @@ const setCookies = require("../utils/setCookies.js"); // Cookie setting logic
 const catchAsync = require("../utils/catchAsync.js");
 const crypto = require("crypto");
 const httpStatus = require("http-status"); // Assuming you're using a package for HTTP status codes
-const jwt = require("jsonwebtoken"); // Make sure to import jwt
-const generateTokens = require("../utils/generateTokens.js"); // Token generation logic
 
 const refreshAccessToken = catchAsync(async (req, res) => {
     const { refreshToken } = req.body;
 
+    // Check if refresh token is provided
     if (!refreshToken) {
-        return res.status(401).json({ message: "No refresh token provided" });
+        return res.status(401).json({ message: "No refresh token provided." });
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    // Check if user exists and refreshToken is in the array
-    if (!user || !user.refreshTokens.includes(refreshToken)) {
-        return res.status(403).json({ message: "Invalid refresh token" });
+    try {
+        // Attempt to refresh the access token
+        const { accessToken, user } = await authService.refreshAccessToken(refreshToken);
+        res.json({ accessToken });
+    } catch (error) {
+        // If there's an error, handle expired tokens
+        if (error.message === "Invalid refresh token") {
+            await authService.cleanExpiredToken(refreshToken);
+            return res.status(403).json({ message: "Invalid refresh token" });
+        }
+        
+        return res.status(401).json({ message: "Refresh token has expired. Please log in again." });
     }
-
-    // Generate a new access token
-    const { accessToken } = generateTokens(user._id);
-    
-    // Send the new access token in response
-    res.json({ accessToken });
 });
-
 const signup = catchAsync(async (req, res) => {
   const { email, password, first_name, last_name, phone_number } = req.body;
 

@@ -195,6 +195,30 @@ const verifyUser = async (adminId, userId) => {
   await user.save();
   
   return user;
+}; 
+
+const refreshAccessToken = async (refreshToken) => {
+    // Verify the refresh token
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    // Check if user exists and refreshToken is in the array
+    if (!user || !user.refreshTokens.includes(refreshToken)) {
+        throw new Error("Invalid refresh token");
+    }
+
+    // Generate a new access token
+    const { accessToken } = generateTokens(user._id);
+    return { accessToken, user };
+};
+
+const cleanExpiredToken = async (refreshToken) => {
+    const user = await User.findOne({ refreshTokens: refreshToken });
+
+    if (user) {
+        user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+        await user.save();
+    }
 };
 module.exports = {
   createUser,
@@ -211,4 +235,6 @@ module.exports = {
   updateUserProfile,
   getUserById,
   getAllUsers,
+  refreshAccessToken,
+    cleanExpiredToken
 };

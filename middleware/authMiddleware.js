@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model.js");
+const generateTokens = require("../utils/generateTokens.js"); // Ensure this utility exists
 
 const protect = async (req, res, next) => {
     try {
@@ -63,33 +64,12 @@ const adminValidator = async (req, res, next) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-const tokenVerificationMiddleware = async (req, res, next) => {
-    const { refreshToken } = req.body;
 
-    if (!refreshToken) {
-        return res.status(401).json({ message: "No refresh token provided." });
-    }
 
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
-        if (err) {
-            // If there is an error (expired or invalid), remove the token from the user's refreshTokens
-            const user = await User.findOne({ refreshTokens: refreshToken });
 
-            if (user) {
-                user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
-                await user.save();
-            }
-            
-            return res.status(401).json({ message: "Refresh token has expired. Please log in again." });
-        }
-        
-        // Attach the user ID to the request object
-        req.userId = decoded.userId;
-        next();
-    });
-};
+
 module.exports = {
 	protect,
-	adminValidator,
-    tokenVerificationMiddleware
+	adminValidator
+    
 };
