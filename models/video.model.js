@@ -33,7 +33,7 @@ const videoSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['available', 'pending', 'rejected'], // Define allowed values
-        default: 'pending', // Default status
+        default: 'available', // Default status
     },
 });
 
