@@ -1,6 +1,7 @@
 // controllers/videoController.js
 const Video = require('../models/video.model');
 const User = require('../models/user.model');
+const mongoose = require('mongoose');
 
 // Create a new video entry
 exports.createVideo = async (req, res) => {
@@ -61,7 +62,7 @@ exports.getAllVideos = async (req, res) => {
             name: userMap[video.userId] || 'Unknown User', // Combine first name and last name
             youtubeURL: video.youtubeURL,
             videoName: video.videoName,
-            createdAt: video.createdAt,
+            createdAt: video.createdat, // Use correct field name from model
             status: video.status,
             message: video.message
         }));
@@ -90,7 +91,7 @@ exports.getUserVideos = async (req, res) => {
             _id: video._id,
             youtubeURL: video.youtubeURL,
             videoName: video.videoName,
-            createdAt: video.createdAt,
+            createdAt: video.createdat, // Use correct field name from model
             message: video.message,
             status: video.status,
         }));
@@ -104,6 +105,11 @@ exports.getUserVideos = async (req, res) => {
 // Get a specific video by ID with user details
 exports.getVideoById = async (req, res) => {
     try {
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid video ID format' });
+        }
+
         const video = await Video.findById(req.params.id);
 
         if (!video) {
@@ -118,8 +124,8 @@ exports.getVideoById = async (req, res) => {
             name: user ? `${user.first_name} ${user.last_name}` : 'Unknown User', // Get user name
             youtubeURL: video.youtubeURL,
             videoName: video.videoName,
-            createdAt: video.createdAt,
-             message: video.message,
+            createdAt: video.createdat, // Use correct field name from model
+            message: video.message,
             status: video.status,
         };
 
@@ -155,8 +161,8 @@ exports.getAvailableVideos = async (req, res) => {
             name: userMap[video.userId] || 'Unknown User', // Combine first name and last name
             youtubeURL: video.youtubeURL,
             videoName: video.videoName,
-            createdAt: video.createdAt,
-             message: video.message,
+            createdAt: video.createdat, // Use correct field name from model
+            message: video.message,
             status: video.status,
         }));
 
@@ -181,7 +187,10 @@ exports.updateVideoWithRoleCheck = async (req, res) => {
 
         const userRole = user.role; // Get role from the database
 
-        console.log("User role:", userRole);
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid video ID format' });
+        }
 
         const video = await Video.findById(req.params.id);
 
@@ -194,12 +203,20 @@ exports.updateVideoWithRoleCheck = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to update this video' });
         }
 
-        // Prepare update object
-        const updateData = { youtubeURL, videoName, message };
+        // Prepare update object - only include fields that are provided
+        const updateData = {};
+        if (youtubeURL !== undefined) updateData.youtubeURL = youtubeURL;
+        if (videoName !== undefined) updateData.videoName = videoName;
+        if (message !== undefined) updateData.message = message;
 
         // If the user is an admin, allow updating the status
-        if (userRole === 'admin' && status) {
+        if (userRole === 'admin' && status !== undefined) {
             updateData.status = status;
+        }
+
+        // Check if there's anything to update
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: 'No fields provided to update' });
         }
 
         const updatedVideo = await Video.findByIdAndUpdate(
@@ -290,7 +307,7 @@ exports.searchVideosByURL = async (req, res) => {
             name: userMap[video.userId] || 'Unknown User',
             youtubeURL: video.youtubeURL,
             videoName: video.videoName,
-            createdAt: video.createdAt,
+            createdAt: video.createdat, // Use correct field name from model
             message: video.message,
             status: video.status,
         }));
@@ -306,11 +323,34 @@ exports.deleteVideo = async (req, res) => {
     try {
         const userId = req.user._id;  // Use user ID from the request
 
-        const video = await Video.findOneAndDelete({ _id: req.params.id, userId });
+        // Validate ObjectId format
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid video ID format' });
+        }
+
+        // Find the user from the database to get the role
+        const user = await User.findById(userId);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const userRole = user.role; // Get role from the database
+
+        // Find the video first to check ownership
+        const video = await Video.findById(req.params.id);
 
         if (!video) {
-            return res.status(404).json({ message: 'Video not found or not authorized' });
+            return res.status(404).json({ message: 'Video not found' });
         }
+
+        // Check if the requester is the creator or has admin role
+        if (video.userId.toString() !== userId.toString() && userRole !== 'admin') {
+            return res.status(403).json({ message: 'Not authorized to delete this video' });
+        }
+
+        // Delete the video
+        await Video.findByIdAndDelete(req.params.id);
 
         return res.status(200).json({ message: 'Video deleted successfully' });
     } catch (error) {
