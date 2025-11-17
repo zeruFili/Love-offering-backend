@@ -101,6 +101,7 @@ const login = catchAsync(async (req, res) => {
       last_name: user.last_name,
       email: user.email,
       role: user.role,
+      isVerified: user.isVerified || false,
     },
   });
 });
